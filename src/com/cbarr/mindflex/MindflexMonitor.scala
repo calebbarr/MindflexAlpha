@@ -2,12 +2,13 @@ package com.cbarr.mindflex
 
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.StreamingContext._
-
+import org.apache.spark.streaming.dstream._
 
 
 object MindflexMonitor {
   
   var ssc:StreamingContext = null
+  var inputStream:ReceiverInputDStream[String] = null
   
   val FRAME_SIZE = 30
   val REFRESH_RATE = 1
@@ -26,7 +27,7 @@ object MindflexMonitor {
     val recentHistory = getWindowedBrainFrame(HISTORY_SIZE*60,60)
     
     brainWaves.print
-    lastStep.print
+    lastStep.count.print
     recentHistory.print
     
     ssc.start
@@ -34,8 +35,9 @@ object MindflexMonitor {
   }
   
   def initialize = {
-    ssc = new StreamingContext("local[6]" /**TODO change once a cluster is up **/,
+    ssc = new StreamingContext("local[8]" /**TODO change once a cluster is up **/,
       "MindFlexMonitor", Seconds(1))
+    inputStream = ssc.socketTextStream("localhost", 9999)
   }
   
   def getWindowedBrainFrame(windowDuration:Int,slideDuration:Int) =
@@ -44,7 +46,7 @@ object MindflexMonitor {
       .map(_._1)
   
   def getBrainFrames =
-    ssc.socketTextStream("localhost", 9999) map { line =>
+     inputStream map { line =>
           val cols = line.split(",").map(_.toDouble)
           new BrainFrame(cols(0),cols(1),cols(2),cols(3),cols(4),cols(5),cols(6),cols(7),cols(8),cols(9),cols(10)) 
     }
