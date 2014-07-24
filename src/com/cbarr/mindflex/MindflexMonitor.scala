@@ -3,18 +3,29 @@ package com.cbarr.mindflex
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.StreamingContext._
 import org.apache.spark.streaming.dstream._
+import org.apache.spark.rdd.RDD
+import com.corundumstudio.socketio._
+import com.google.gson._
+
 
 
 object MindflexMonitor {
   
   var ssc:StreamingContext = null
   var inputStream:ReceiverInputDStream[String] = null
+  var websocketServer:com.corundumstudio.socketio.SocketIOServer = null
+  var connected = false
   
+  val WEBSOCKET_PORT = 8080
+  val SOCKET_PORT = 9999
+  val gson = new Gson
+  
+
   val FRAME_SIZE = 30
   val REFRESH_RATE = 1
   val HISTORY_SIZE = 5
   
-  case class BrainFrame(signalStrength:Double,attention:Double,meditation:Double,
+  case class BrainFrame(attention:Double,meditation:Double,
       delta:Double,theta:Double,lowAlpha:Double, highAlpha:Double,lowBeta:Double,
       highBeta:Double,lowGamma:Double,highGamma:Double)
   
@@ -23,13 +34,14 @@ object MindflexMonitor {
     initialize
     
     val brainWaves = getWindowedBrainFrame(FRAME_SIZE,REFRESH_RATE)
-    val lastStep = getWindowedBrainFrame(FRAME_SIZE*2,REFRESH_RATE*2)
-    val recentHistory = getWindowedBrainFrame(HISTORY_SIZE*60,60)
+    val lastStep = getWindowedBrainFrame(FRAME_SIZE*2,REFRESH_RATE)
+    val recentHistory = getWindowedBrainFrame(HISTORY_SIZE*60,REFRESH_RATE)
     
-    brainWaves.print
-    lastStep.count.print
-    recentHistory.print
-    
+    val deltas =  
+      getDeltasAsPercentages(recentHistory,getDeltas(lastStep,brainWaves))
+      
+    deltas.foreach(_.collect foreach sendBrainwaves)
+        
     ssc.start
     ssc.awaitTermination
   }
@@ -37,8 +49,85 @@ object MindflexMonitor {
   def initialize = {
     ssc = new StreamingContext("local[8]" /**TODO change once a cluster is up **/,
       "MindFlexMonitor", Seconds(1))
+    
+    
+    websocketServer = getWebsocketServer
+    
+    websocketServer.addConnectListener(new listener.ConnectListener(){
+      def onConnect(client:SocketIOClient){
+        connected = true
+      }
+    })
+    
+    websocketServer.addDisconnectListener(new listener.DisconnectListener(){
+      def onDisconnect(client:SocketIOClient){
+        if(websocketServer.getAllClients().size() == 0)
+          connected = false
+      }
+    })
+    
+    websocketServer.start
+    println("waiting for connection to websocket")
+    while(!connected) Thread.sleep(100)
+    println("connected to websocket")
+    
     inputStream = ssc.socketTextStream("localhost", 9999)
+    
   }
+  
+  def getWebsocketServer = {
+    val config = new Configuration
+    config.setHostname("localhost");
+    config.setPort(WEBSOCKET_PORT);
+    new SocketIOServer(config)
+  }
+  
+  def sendBrainwaves(brainWaves:BrainFrame) {
+    if(connected){
+      val it = websocketServer.getAllClients.iterator
+      while(it.hasNext()) {
+        val client = it.next
+        client.sendEvent("brainwaves", gson.toJson(brainWaves))
+      }
+    }
+    println(brainWaves)
+  }
+  
+  def getDeltasAsPercentages(dstream1:DStream[BrainFrame],dstream2:DStream[BrainFrame]) =
+    dstream1.transformWith(dstream2, 
+      (older:RDD[BrainFrame],younger:RDD[BrainFrame]) => {
+        older.zip(younger).map{ case(older,younger) =>
+          new BrainFrame(
+            (older.attention - younger.attention) / older.attention,
+            (older.meditation - younger.meditation) /older.meditation,
+            (older.delta - younger.delta) / older.delta,
+            (older.theta - younger.theta) / older.theta,
+            (older.lowAlpha - younger.lowAlpha) / older.lowAlpha,
+            (older.highAlpha - younger.highAlpha) / older.highAlpha,
+            (older.lowBeta - younger.lowBeta) / older.lowBeta,
+            (older.highBeta - younger.highBeta) / older.highBeta,
+            (older.lowGamma - younger.lowGamma) / older.lowGamma,
+            (older.highGamma - younger.highGamma) /older.highGamma )
+        }
+     })
+  
+  def getDeltas(dstream1:DStream[BrainFrame],dstream2:DStream[BrainFrame]) =
+    dstream1.transformWith(dstream2, 
+      (older:RDD[BrainFrame],younger:RDD[BrainFrame]) => {
+        older.zip(younger).map{ case(older,younger) =>
+          new BrainFrame(
+            older.attention - younger.attention,
+            older.meditation - younger.meditation,
+            older.delta - younger.delta,
+            older.theta - younger.theta,
+            older.lowAlpha - younger.lowAlpha,
+            older.highAlpha - younger.highAlpha,
+            older.lowBeta - younger.lowBeta,
+            older.highBeta - younger.highBeta,
+            older.lowGamma - younger.lowGamma,
+            older.highGamma - younger.highGamma)
+        }
+     })
   
   def getWindowedBrainFrame(windowDuration:Int,slideDuration:Int) =
     getBrainFrames.map(_ -> 1.0)
@@ -46,24 +135,40 @@ object MindflexMonitor {
       .map(_._1)
   
   def getBrainFrames =
-     inputStream map { line =>
-          val cols = line.split(",").map(_.toDouble)
-          new BrainFrame(cols(0),cols(1),cols(2),cols(3),cols(4),cols(5),cols(6),cols(7),cols(8),cols(9),cols(10)) 
+     inputStream. map { line =>
+          val cols = line.split(",").map(_.toDouble) //cols(0) is signal strength, always 0
+          new BrainFrame(cols(1),cols(2),cols(3),cols(4),cols(5),cols(6),cols(7),cols(8),cols(9),cols(10)) 
     }
   
   // if m_n is the mean of x_1 ... x_n, then m_{n+1} = (n*m_n + x_{n+1})/(n+1).
   def movingAverage(a:(BrainFrame,Double), b:(BrainFrame,Double)) = 
     (new BrainFrame(
-        (a._2 * a._1.signalStrength + b._2 * b._1.signalStrength)/(a._2+b._2),
-        (a._2 * a._1.attention + b._2 * b._1.attention)/(a._2+b._2),
-        (a._2 * a._1.meditation + b._2 * b._1.meditation)/(a._2+b._2),
-        (a._2 * a._1.delta + b._2 * b._1.delta)/(a._2+b._2),
-        (a._2 * a._1.theta + b._2 * b._1.theta)/(a._2+b._2),
-        (a._2 * a._1.lowAlpha + b._2 * b._1.lowAlpha)/(a._2+b._2),
-        (a._2 * a._1.highAlpha + b._2 * b._1.highAlpha)/(a._2+b._2),
-        (a._2 * a._1.lowBeta + b._2 * b._1.lowBeta)/(a._2+b._2),
-        (a._2 * a._1.highBeta + b._2 * b._1.highBeta)/(a._2+b._2),
-        (a._2 * a._1.lowGamma + b._2 * b._1.lowGamma)/(a._2+b._2),
-        (a._2 * a._1.highGamma + b._2 * b._1.highGamma)/(a._2+b._2)
+      (a._2 * a._1.attention + b._2 * b._1.attention)/(a._2+b._2),
+      (a._2 * a._1.meditation + b._2 * b._1.meditation)/(a._2+b._2),
+      (a._2 * a._1.delta + b._2 * b._1.delta)/(a._2+b._2),
+      (a._2 * a._1.theta + b._2 * b._1.theta)/(a._2+b._2),
+      (a._2 * a._1.lowAlpha + b._2 * b._1.lowAlpha)/(a._2+b._2),
+      (a._2 * a._1.highAlpha + b._2 * b._1.highAlpha)/(a._2+b._2),
+      (a._2 * a._1.lowBeta + b._2 * b._1.lowBeta)/(a._2+b._2),
+      (a._2 * a._1.highBeta + b._2 * b._1.highBeta)/(a._2+b._2),
+      (a._2 * a._1.lowGamma + b._2 * b._1.lowGamma)/(a._2+b._2),
+      (a._2 * a._1.highGamma + b._2 * b._1.highGamma)/(a._2+b._2)
     ), a._2+b._2)
+    
+  def getDeltas(older:RDD[BrainFrame],younger:RDD[BrainFrame]) = {
+    older.zip(younger).map{ case(older,younger) =>
+      new BrainFrame(
+        older.attention - younger.attention,
+        older.meditation - younger.meditation,
+        older.delta - younger.delta,
+        older.theta - younger.theta,
+        older.lowAlpha - younger.lowAlpha,
+        older.highAlpha - younger.highAlpha,
+        older.lowBeta - younger.lowBeta,
+        older.highBeta - younger.highBeta,
+        older.lowGamma - younger.lowGamma,
+        older.highGamma - younger.highGamma)
+    }
+  }
+    
 }

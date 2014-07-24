@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Mindflex Alpha</title>
+	<link href="examples.css" rel="stylesheet" type="text/css">
+	<script language="javascript" type="text/javascript" src="jquery.js"></script>
+	<script language="javascript" type="text/javascript" src="jquery.flot.js"></script>
+	<script language="javascript" type="text/javascript" src="/update.js"></script>
+	<script src="https://cdn.socket.io/socket.io-1.0.6.js"></script>
+	<script type="text/javascript">
+	</script>
+	<script>
+		var socket = io.connect('localhost:8080');
+		
+		socket.on('brainwaves', function(data) {
+		  var brainWaves = $.parseJSON(data)
+		  brainWavesQueue.push(brainWaves);
+		});
+	</script>
+</head>
+<body>
+
+	<div id="header" align="center">
+		<h2>Mindflex Alpha</h2>
+	</div>
+
+	<div id="content">
+
+		<div class="demo-container">
+			<div id="placeholder" class="demo-placeholder" style="float:left; width:675px;"></div>
+			<p id="choices" style="float:right; width:135px;"></p>
+		</div>
+
+	</div>
+
+	<div id="footer">
+		Copyright &copy; 2007 - 2014 IOLA and Ole Laursen
+	</div>
+
+</body>
+</html>

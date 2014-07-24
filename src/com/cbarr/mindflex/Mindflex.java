@@ -29,8 +29,8 @@ public class Mindflex implements SerialPortEventListener {
      
     public static void main(String[] args) {
         Mindflex mindflex = new Mindflex();
-//        mindflex.initialize();
-        mindflex.test();
+        mindflex.initialize();
+//        mindflex.test();
     }
     
     public void test(){
@@ -52,7 +52,7 @@ public class Mindflex implements SerialPortEventListener {
                 	String line = sb.toString()+"\n";
                 	output.write(line);
     				output.flush();
-    				System.out.println(line);
+//    				System.out.println(line);
                 } catch (Exception ex) { }
             }
     	} catch(Exception ex){
@@ -74,6 +74,7 @@ public class Mindflex implements SerialPortEventListener {
         serverSocket = new ServerSocket(9999);
         System.out.println("setting up client socket");
         clientSocket = serverSocket.accept();
+        System.out.println("connection with client socket established");
       }
     
     
@@ -82,8 +83,8 @@ public class Mindflex implements SerialPortEventListener {
         try {
         	
             CommPortIdentifier portid = getPortId();
-            setupSockets();
             setupPort(portid);
+            setupSockets();
             setupIO();
             port.addEventListener(this);
             port.notifyOnDataAvailable(true);
