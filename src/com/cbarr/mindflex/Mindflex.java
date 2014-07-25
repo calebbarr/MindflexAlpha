@@ -29,8 +29,8 @@ public class Mindflex implements SerialPortEventListener {
      
     public static void main(String[] args) {
         Mindflex mindflex = new Mindflex();
-        mindflex.initialize();
-//        mindflex.test();
+//        mindflex.initialize();`
+        mindflex.test();
     }
     
     public void test(){

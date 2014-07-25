@@ -10,20 +10,19 @@ import com.google.gson._
 
 
 object MindflexMonitor {
+
+  
+  val WEBSOCKET_PORT = 8080
+  val SOCKET_PORT = 9999
+  val FRAME_SIZE = 30
+  val REFRESH_RATE = 1
+  val HISTORY_SIZE = 5
   
   var ssc:StreamingContext = null
   var inputStream:ReceiverInputDStream[String] = null
   var websocketServer:com.corundumstudio.socketio.SocketIOServer = null
-  var connected = false
-  
-  val WEBSOCKET_PORT = 8080
-  val SOCKET_PORT = 9999
+  var connectedToWebsocket = false
   val gson = new Gson
-  
-
-  val FRAME_SIZE = 30
-  val REFRESH_RATE = 1
-  val HISTORY_SIZE = 5
   
   case class BrainFrame(attention:Double,meditation:Double,
       delta:Double,theta:Double,lowAlpha:Double, highAlpha:Double,lowBeta:Double,
@@ -37,8 +36,8 @@ object MindflexMonitor {
     val lastStep = getWindowedBrainFrame(FRAME_SIZE*2,REFRESH_RATE)
     val recentHistory = getWindowedBrainFrame(HISTORY_SIZE*60,REFRESH_RATE)
     
-    val deltas =  
-      getDeltasAsPercentages(recentHistory,getDeltas(lastStep,brainWaves))
+    val deltas = getDeltasAsPercentages(recentHistory,brainWaves)
+    
       
     deltas.foreach(_.collect foreach sendBrainwaves)
         
@@ -49,28 +48,9 @@ object MindflexMonitor {
   def initialize = {
     ssc = new StreamingContext("local[8]" /**TODO change once a cluster is up **/,
       "MindFlexMonitor", Seconds(1))
-    
-    
     websocketServer = getWebsocketServer
-    
-    websocketServer.addConnectListener(new listener.ConnectListener(){
-      def onConnect(client:SocketIOClient){
-        connected = true
-      }
-    })
-    
-    websocketServer.addDisconnectListener(new listener.DisconnectListener(){
-      def onDisconnect(client:SocketIOClient){
-        if(websocketServer.getAllClients().size() == 0)
-          connected = false
-      }
-    })
-    
-    websocketServer.start
-    println("waiting for connection to websocket")
-    while(!connected) Thread.sleep(100)
-    println("connected to websocket")
-    
+    startWebsocketServer
+ 
     inputStream = ssc.socketTextStream("localhost", 9999)
     
   }
@@ -82,8 +62,37 @@ object MindflexMonitor {
     new SocketIOServer(config)
   }
   
+  def startWebsocketServer = {
+    websocketServer.addConnectListener(new listener.ConnectListener(){
+      def onConnect(client:SocketIOClient){
+        connectedToWebsocket = true
+      }
+    }) 
+    websocketServer.addDisconnectListener(new listener.DisconnectListener(){
+      def onDisconnect(client:SocketIOClient){
+        if(websocketServer.getAllClients().size() == 0)
+          connectedToWebsocket = false
+      }
+    })
+    var serverStarted = false
+    println("starting websocket server")
+    while(!serverStarted) {
+      try{
+        websocketServer.start
+        serverStarted = true
+        println
+        println("waiting for connection to websocket")
+      } catch {
+        case e:java.net.BindException => {
+          print(".")
+          Thread.sleep(500)
+        }
+      }
+    }
+  }
+  
   def sendBrainwaves(brainWaves:BrainFrame) {
-    if(connected){
+    if(connectedToWebsocket){
       val it = websocketServer.getAllClients.iterator
       while(it.hasNext()) {
         val client = it.next
@@ -98,16 +107,16 @@ object MindflexMonitor {
       (older:RDD[BrainFrame],younger:RDD[BrainFrame]) => {
         older.zip(younger).map{ case(older,younger) =>
           new BrainFrame(
-            (older.attention - younger.attention) / older.attention,
-            (older.meditation - younger.meditation) /older.meditation,
-            (older.delta - younger.delta) / older.delta,
-            (older.theta - younger.theta) / older.theta,
-            (older.lowAlpha - younger.lowAlpha) / older.lowAlpha,
-            (older.highAlpha - younger.highAlpha) / older.highAlpha,
-            (older.lowBeta - younger.lowBeta) / older.lowBeta,
-            (older.highBeta - younger.highBeta) / older.highBeta,
-            (older.lowGamma - younger.lowGamma) / older.lowGamma,
-            (older.highGamma - younger.highGamma) /older.highGamma )
+            1.0 + ((older.attention - younger.attention) / older.attention),
+            1.0 + ((older.meditation - younger.meditation) /older.meditation),
+            1.0 + ((older.delta - younger.delta) / older.delta),
+            1.0 + ((older.theta - younger.theta) / older.theta),
+            1.0 + ((older.lowAlpha - younger.lowAlpha) / older.lowAlpha),
+            1.0 + ((older.highAlpha - younger.highAlpha) / older.highAlpha),
+            1.0 + ((older.lowBeta - younger.lowBeta) / older.lowBeta),
+            1.0 + ((older.highBeta - younger.highBeta) / older.highBeta),
+            1.0 + ((older.lowGamma - younger.lowGamma) / older.lowGamma),
+            1.0 + ((older.highGamma - younger.highGamma) /older.highGamma) )
         }
      })
   

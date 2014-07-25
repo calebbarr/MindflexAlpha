@@ -221,8 +221,6 @@
 	<classpathentry kind="lib" path="/usr/local/workspace/MindflexAlpha/lib/jna-4.0.0.jar"/>
 	<classpathentry kind="lib" path="/usr/local/workspace/MindflexAlpha/lib/purejavacomm-0.0.21.jar"/>
 	<classpathentry kind="lib" path="/usr/local/spark/1.0.1/streaming/target/scala-2.10/spark-streaming_2.10-1.0.1.jar"/>
-	<classpathentry kind="lib" path="/usr/local/workspace/MindflexAlpha/lib/jfugue-4.0.3.jar" sourcepath="/Users/calebbarr/Downloads/jfugue_doc"/>
-	<classpathentry kind="lib" path="/usr/local/workspace/MindflexAlpha/lib/SoundHelix.jar"/>
 	<classpathentry kind="lib" path="/usr/local/workspace/MindflexAlpha/lib/gnu-getopt.jar"/>
 	<classpathentry kind="lib" path="/usr/local/workspace/MindflexAlpha/lib/log4j.jar"/>
 	<classpathentry kind="lib" path="/usr/local/workspace/MindflexAlpha/lib/netty-socketio-1.7.2-SNAPSHOT.jar"/>
