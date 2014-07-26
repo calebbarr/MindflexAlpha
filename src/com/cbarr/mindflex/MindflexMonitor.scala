@@ -14,7 +14,7 @@ object MindflexMonitor {
   
   val WEBSOCKET_PORT = 8080
   val SOCKET_PORT = 9999
-  val FRAME_SIZE = 30
+  val FRAME_SIZE = 10
   val REFRESH_RATE = 1
   val HISTORY_SIZE = 5
   
@@ -48,10 +48,11 @@ object MindflexMonitor {
   def initialize = {
     ssc = new StreamingContext("local[8]" /**TODO change once a cluster is up **/,
       "MindFlexMonitor", Seconds(1))
+    inputStream = ssc.socketTextStream("localhost", 9999)
     websocketServer = getWebsocketServer
     startWebsocketServer
  
-    inputStream = ssc.socketTextStream("localhost", 9999)
+    
     
   }
   
@@ -107,16 +108,16 @@ object MindflexMonitor {
       (older:RDD[BrainFrame],younger:RDD[BrainFrame]) => {
         older.zip(younger).map{ case(older,younger) =>
           new BrainFrame(
-            1.0 + ((older.attention - younger.attention) / older.attention),
-            1.0 + ((older.meditation - younger.meditation) /older.meditation),
-            1.0 + ((older.delta - younger.delta) / older.delta),
-            1.0 + ((older.theta - younger.theta) / older.theta),
-            1.0 + ((older.lowAlpha - younger.lowAlpha) / older.lowAlpha),
-            1.0 + ((older.highAlpha - younger.highAlpha) / older.highAlpha),
-            1.0 + ((older.lowBeta - younger.lowBeta) / older.lowBeta),
-            1.0 + ((older.highBeta - younger.highBeta) / older.highBeta),
-            1.0 + ((older.lowGamma - younger.lowGamma) / older.lowGamma),
-            1.0 + ((older.highGamma - younger.highGamma) /older.highGamma) )
+            ((younger.attention - older.attention) / older.attention),
+            ((younger.meditation - older.meditation) /older.meditation),
+            ((younger.delta - older.delta) / older.delta),
+            ((younger.theta - older.theta) / older.theta),
+            ((younger.lowAlpha - older.lowAlpha) / older.lowAlpha),
+            ((younger.highAlpha - older.highAlpha) / older.highAlpha),
+            ((younger.lowBeta - older.lowBeta) / older.lowBeta),
+            ((younger.highBeta - older.highBeta) / older.highBeta),
+            ((younger.lowGamma - older.lowGamma) / older.lowGamma),
+            ((younger.highGamma - older.highGamma) /older.highGamma) )
         }
      })
   
@@ -125,16 +126,16 @@ object MindflexMonitor {
       (older:RDD[BrainFrame],younger:RDD[BrainFrame]) => {
         older.zip(younger).map{ case(older,younger) =>
           new BrainFrame(
-            older.attention - younger.attention,
-            older.meditation - younger.meditation,
-            older.delta - younger.delta,
-            older.theta - younger.theta,
-            older.lowAlpha - younger.lowAlpha,
-            older.highAlpha - younger.highAlpha,
-            older.lowBeta - younger.lowBeta,
-            older.highBeta - younger.highBeta,
-            older.lowGamma - younger.lowGamma,
-            older.highGamma - younger.highGamma)
+            younger.attention - older.attention,
+            younger.meditation - older.meditation,
+            younger.delta - older.delta,
+            younger.theta - older.theta,
+            younger.lowAlpha - older.lowAlpha,
+            younger.highAlpha - older.highAlpha,
+            younger.lowBeta - older.lowBeta,
+            younger.highBeta - older.highBeta,
+            younger.lowGamma - older.lowGamma,
+            younger.highGamma - older.highGamma)
         }
      })
   

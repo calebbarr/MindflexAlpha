@@ -1,10 +1,10 @@
-var updateInterval = 10;
+var updateInterval = 30;
 var totalPoints = 100;
-// var MIN_VALUE = -2
-// var MAX_VALUE = 2
+var MIN_VALUE = -.5
+var MAX_VALUE = 2
 REDRAW_THRESHOLD = .2
-var minValue = -.5
-var maxValue = .5
+// var minValue = -.5
+// var maxValue = .5
 
 
 var brainWavesQueue = []
@@ -143,13 +143,17 @@ $(function() {
 
     if(Math.abs(max - maxValue) >= REDRAW_THRESHOLD){
       maxValue = max
+      plot.getAxes().yaxis.max = maxValue
       redraw = true
     }
 
     if(Math.abs(min - minValue) >= REDRAW_THRESHOLD){
-      maxValue = max
+      minValue = min
+      plot.getAxes().yaxis.min = minValue
       redraw = true
     }
+    
+    
 
     return redraw;
   }
@@ -250,10 +254,10 @@ $(function() {
    series: {
      shadowSize: 0 // Drawing is faster without shadows
    },
-   // yaxis: {
-   //   min: MIN_VALUE,
-   //   max: MAX_VALUE
-   // },
+   yaxis: {
+     min: MIN_VALUE,
+     max: MAX_VALUE
+   },
    xaxis: {
      show: false
    }
@@ -263,8 +267,8 @@ $(function() {
 	  getData();
 		plot.setData(dataAccordingToChoices());
 		
-		if(newMinOrMax())
-		  plot.setupGrid();
+    // if(newMinOrMax())
+    //   plot.setupGrid();
 		plot.draw();
 		setTimeout(update, updateInterval);
 

@@ -29,8 +29,8 @@ public class Mindflex implements SerialPortEventListener {
      
     public static void main(String[] args) {
         Mindflex mindflex = new Mindflex();
-//        mindflex.initialize();`
-        mindflex.test();
+        mindflex.initialize();
+//        mindflex.test();
     }
     
     public void test(){
@@ -120,7 +120,6 @@ public class Mindflex implements SerialPortEventListener {
 		Enumeration portEnum = CommPortIdentifier.getPortIdentifiers();
             while(portEnum.hasMoreElements()) {
             	portid = (CommPortIdentifier)portEnum.nextElement();
-            	System.out.println( "Trying: " + portid.getName() );
             	if(portid.getName().contains(PORT_NAME) && portid.getName().contains(PORT_TYPE)){
             		break;
             	}
