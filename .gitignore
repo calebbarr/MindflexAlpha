@@ -1,6 +1,8 @@
-bin
-*.class
 /bin
+/target
+/logs
+*.class
+*.jar
 .settings
 .cache
 .classpath

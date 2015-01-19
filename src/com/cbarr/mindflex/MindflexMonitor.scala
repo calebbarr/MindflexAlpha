@@ -7,10 +7,7 @@ import org.apache.spark.rdd.RDD
 import com.corundumstudio.socketio._
 import com.google.gson._
 
-
-
 object MindflexMonitor {
-
   
   val WEBSOCKET_PORT = 8080
   val SOCKET_PORT = 9999
@@ -38,8 +35,7 @@ object MindflexMonitor {
     
     val deltas = getDeltasAsPercentages(recentHistory,brainWaves)
     
-      
-    deltas.foreach(_.collect foreach sendBrainwaves)
+    deltas foreach {_.collect foreach sendBrainwaves}
         
     ssc.start
     ssc.awaitTermination
@@ -51,9 +47,6 @@ object MindflexMonitor {
     inputStream = ssc.socketTextStream("localhost", 9999)
     websocketServer = getWebsocketServer
     startWebsocketServer
- 
-    
-    
   }
   
   def getWebsocketServer = {
