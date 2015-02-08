@@ -14,6 +14,7 @@ object MindflexMonitor {
   val FRAME_SIZE = 10
   val REFRESH_RATE = 1
   val HISTORY_SIZE = 5
+  val LOGFILE = new java.io.PrintWriter(new java.io.File("logs/brainwaves.txt"))
   
   var ssc:StreamingContext = null
   var inputStream:ReceiverInputDStream[String] = null
@@ -93,8 +94,15 @@ object MindflexMonitor {
         client.sendEvent("brainwaves", gson.toJson(brainWaves))
       }
     }
-    println(brainWaves)
+    log(brainWaves)
   }
+  
+  def log(brainWaves:BrainFrame) = {
+    println(brainWaves)
+    LOGFILE.println(brainWaves)
+    LOGFILE.flush
+  }
+    
   
   def getDeltasAsPercentages(dstream1:DStream[BrainFrame],dstream2:DStream[BrainFrame]) =
     dstream1.transformWith(dstream2, 
