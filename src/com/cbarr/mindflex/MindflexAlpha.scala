@@ -7,10 +7,10 @@ import org.apache.spark.rdd.RDD
 import com.corundumstudio.socketio._
 import com.google.gson._
 
-object MindflexMonitor {
+object MindflexAlpha {
   
   val WEBSOCKET_PORT = 8080
-  val SOCKET_PORT = 9999
+  val MINDFLEX_PORT = 9999
   val FRAME_SIZE = 10
   val REFRESH_RATE = 1
   val HISTORY_SIZE = 5
@@ -31,12 +31,11 @@ object MindflexMonitor {
     initialize
     
     val brainWaves = getWindowedBrainFrame(FRAME_SIZE,REFRESH_RATE)
-    val lastStep = getWindowedBrainFrame(FRAME_SIZE*2,REFRESH_RATE)
     val recentHistory = getWindowedBrainFrame(HISTORY_SIZE*60,REFRESH_RATE)
     
     val deltas = getDeltasAsPercentages(recentHistory,brainWaves)
     
-    deltas foreach {_.collect foreach sendBrainwaves}
+    deltas foreachRDD {_.collect foreach sendBrainwaves}
         
     ssc.start
     ssc.awaitTermination
@@ -45,7 +44,7 @@ object MindflexMonitor {
   def initialize = {
     ssc = new StreamingContext("local[8]" /**TODO change once a cluster is up **/,
       "MindFlexMonitor", Seconds(1))
-    inputStream = ssc.socketTextStream("localhost", 9999)
+    inputStream = ssc.socketTextStream("localhost", MINDFLEX_PORT)
     websocketServer = getWebsocketServer
     startWebsocketServer
   }
@@ -75,8 +74,6 @@ object MindflexMonitor {
       try{
         websocketServer.start
         serverStarted = true
-        println
-        println("waiting for connection to websocket")
       } catch {
         case e:java.net.BindException => {
           print(".")
@@ -98,7 +95,6 @@ object MindflexMonitor {
   }
   
   def log(brainWaves:BrainFrame) = {
-    println(brainWaves)
     LOGFILE.println(brainWaves)
     LOGFILE.flush
   }
@@ -146,9 +142,10 @@ object MindflexMonitor {
       .map(_._1)
   
   def getBrainFrames =
-     inputStream. map { line =>
-          val cols = line.split(",").map(_.toDouble) //cols(0) is signal strength, always 0
-          new BrainFrame(cols(1),cols(2),cols(3),cols(4),cols(5),cols(6),cols(7),cols(8),cols(9),cols(10)) 
+     inputStream filter {line => line.length > 0 && line(0) == '0'} map { line =>
+          // first entry is signal strength, should be 0
+          val cols = line.split(",").map(_.toDouble)
+          new BrainFrame(cols(1),cols(2),cols(3),cols(4),cols(5),cols(6),cols(7),cols(8),cols(9),cols(10))
     }
   
   // if m_n is the mean of x_1 ... x_n, then m_{n+1} = (n*m_n + x_{n+1})/(n+1).
