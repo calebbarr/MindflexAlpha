@@ -19,7 +19,7 @@ Streaming analytics on brain waves, extensible to various applications.  Require
 		`nc localhost 9999`
 
 ## visualizing the Mindflex
-* 	Use [this](https://github.com/calebbarr/MindflexAlpha/tree/master/website/source) [middleman](https://middlemanapp.com/) source directory to build a static website.
+* 	Use this [source directory](https://github.com/calebbarr/MindflexAlpha/tree/master/website/source) for [middleman](https://middlemanapp.com/) to build a static website:
 	* 	`gem install middleman`
 	* 	`middleman init MindflexSite`
 	* 	`cp -r MindflexAlpha/website/source init/`
