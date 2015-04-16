@@ -17,3 +17,7 @@ Streaming analytics on brain waves, extensible to various applications.  Require
 		`lsof -i :9999`
 * 	view Mindflex data:
 		`nc localhost 9999`
+
+## visualizing the Mindflex
+* 	Use [this](https://github.com/calebbarr/MindflexAlpha/tree/master/website/source) [middleman](https://middlemanapp.com/) source directory to build a static website.
+* 	It will listen on `8080` and visualize data using [flot](http://www.flotcharts.org/).
