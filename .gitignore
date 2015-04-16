@@ -8,10 +8,3 @@
 .classpath
 .project
 .DS_Store
-/public/Gemfile*
-/public/config.rb
-/public/source
-/public/.bundle
-/public/build
-/public/.sass-cache
-/public/.cache
