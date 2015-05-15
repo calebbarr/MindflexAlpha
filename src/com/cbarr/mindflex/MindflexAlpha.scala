@@ -9,12 +9,12 @@ import com.google.gson._
 
 object MindflexAlpha {
   
-  val WEBSOCKET_PORT = 8080
+  val WEBSOCKET_PORT = 8081
   val MINDFLEX_PORT = 9999
   val FRAME_SIZE = 10
   val REFRESH_RATE = 1
   val HISTORY_SIZE = 5
-  val LOGFILE = new java.io.PrintWriter(new java.io.File("logs/brainwaves.txt"))
+  val LOGFILE = new java.io.PrintWriter(new java.io.File("/tmp/brainwaves.txt"))
   
   var ssc:StreamingContext = null
   var inputStream:ReceiverInputDStream[String] = null
