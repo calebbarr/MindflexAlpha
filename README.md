@@ -9,13 +9,13 @@ Streaming analytics on brain waves, extensible to various applications.  Require
 * Connect a [Bluetooth Bee](http://www.seeedstudio.com/depot/Bluetooth-Bee-p-598.html) and a [LiPo battery](https://www.sparkfun.com/products/731).
 
 ## communicating with the Mindflex
-* 	pair mindflex
+* 	Pair mindflex:
 * 	`brew install ser2net`
-* 	add the following line to the conf file: 
+* 	Add the following line to the conf file: 
 		`9999:raw:0:/dev/tty.mindflex-DevB:38400  XONXOFF`
-* 	start ser2net, confirm you are proxying serial traffic with: 
+* 	Start ser2net, confirm you are proxying serial traffic with: 
 		`lsof -i :9999`
-* 	view Mindflex data:
+* 	View Mindflex data:
 		`nc localhost 9999`
 
 ## visualizing the Mindflex
@@ -25,4 +25,6 @@ Streaming analytics on brain waves, extensible to various applications.  Require
 	* 	`rm -r source && ln -s ../MindflexAlpha/website/source`
 	* 	`middleman build`
 	* 	`middleman`
+	* 	Add the following line to your `config.rb`:
+		* 	`Tilt::CoffeeScriptTemplate.default_bare = true`
 * 	It will listen on `8080` and visualize brainwaves using [flot](http://www.flotcharts.org/) on `http://localhost:4567`.
