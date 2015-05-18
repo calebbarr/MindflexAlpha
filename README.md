@@ -12,7 +12,7 @@ Streaming analytics on brain waves, extensible to various applications.  Require
 * 	Pair mindflex:
 * 	`brew install ser2net`
 * 	Add the following line to the conf file: 
-		*	`9999:raw:0:/dev/tty.mindflex-DevB:38400  XONXOFF`
+		* 	`9999:raw:0:/dev/tty.mindflex-DevB:38400  XONXOFF`
 * 	Start ser2net, confirm you are proxying serial traffic with: 
 		`lsof -i :9999`
 * 	View Mindflex data:
