@@ -14,9 +14,9 @@ Streaming analytics on brain waves, extensible to various applications.  Require
 * 	Add the following line to the conf file: 
 	* 	`9999:raw:0:/dev/tty.mindflex-DevB:38400  XONXOFF`
 * 	Start ser2net, confirm you are proxying serial traffic with: 
-		`lsof -i :9999`
+	* 	`lsof -i :9999`
 * 	View Mindflex data:
-		`nc localhost 9999`
+	* 	`nc localhost 9999`
 
 ## visualizing the Mindflex
 * 	Use this [source directory](https://github.com/calebbarr/MindflexAlpha/tree/master/website/source) for [middleman](https://middlemanapp.com/) to build a static website:
