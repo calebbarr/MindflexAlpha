@@ -22,9 +22,9 @@ Streaming analytics on brain waves, extensible to various applications.  Require
 * 	Use this [source directory](https://github.com/calebbarr/MindflexAlpha/tree/master/website/source) for [middleman](https://middlemanapp.com/) to build a static website:
 	* 	`gem install middleman`
 	* 	`middleman init MindflexSite && cd MindflexSite`
+	* 	Add the following line to your `config.rb`:
+		* 	`Tilt::CoffeeScriptTemplate.default_bare = true`
 	* 	`rm -r source && ln -s ../MindflexAlpha/website/source`
 	* 	`middleman build`
 	* 	`middleman`
-	* 	Add the following line to your `config.rb`:
-		* 	`Tilt::CoffeeScriptTemplate.default_bare = true`
 * 	It will listen on `8080` and visualize brainwaves using [flot](http://www.flotcharts.org/) on `http://localhost:4567`.
