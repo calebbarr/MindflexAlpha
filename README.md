@@ -1,6 +1,7 @@
 #MindflexAlpha
 
 Streaming analytics on brain waves, extensible to various applications.  Requires a modified Mindflex EEG.
+![ScreenShot](http://xbarr.me/mindflex-ui.png)
 ## modifying the Mindflex
 
 * Use Arduino IDE to flash the [sketch](https://github.com/calebbarr/MindflexAlpha/blob/master/embedded/MindflexAlphaArduinoSketch.pde) onto an [Arduino Fio](http://arduino.cc/en/Main/ArduinoBoardFio).  It depends on the [Arduino Brain Library](https://github.com/kitschpatrol/Brain).  You may need to hit [reset](http://stackoverflow.com/a/20735393/1215687) at the correct time.
