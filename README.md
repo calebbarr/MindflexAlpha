@@ -9,22 +9,14 @@ Streaming analytics on brain waves, extensible to various applications.  Require
 * Connect a [Bluetooth Bee](http://www.seeedstudio.com/depot/Bluetooth-Bee-p-598.html) and a [LiPo battery](https://www.sparkfun.com/products/731).
 
 ## communicating with the Mindflex
-* 	Pair mindflex:
+* 	Pair mindflex
 * 	`brew install ser2net`
-* 	Add the following line to the conf file: 
-	* 	`9999:raw:0:/dev/tty.mindflex-DevB:38400  XONXOFF`
-* 	Start ser2net, confirm you are proxying serial traffic with: 
+*		`/usr/local/sbin/ser2net -C 9999:raw:0:/dev/tty.mindflex-DevB:38400,XONXOFF -u`
+* 	Confirm you are proxying serial traffic with: 
 	* 	`lsof -i :9999`
 * 	View Mindflex data:
 	* 	`nc localhost 9999`
 
 ## visualizing the Mindflex
-* 	Use this [source directory](https://github.com/calebbarr/MindflexAlpha/tree/master/website/source) for [middleman](https://middlemanapp.com/) to build a static website:
-	* 	`gem install middleman`
-	* 	`middleman init MindflexSite && cd MindflexSite`
-	* 	Add the following line to your `config.rb`:
-		* 	`Tilt::CoffeeScriptTemplate.default_bare = true`
-	* 	`rm -r source && ln -s ../MindflexAlpha/website/source`
-	* 	`middleman build`
-	* 	`middleman`
-* 	It will listen on `8080` and visualize brainwaves using [flot](http://www.flotcharts.org/) on `http://localhost:4567`.
+* 	[Serve](https://echo.co/blog/os-x-1010-yosemite-local-development-environment-apache-php-and-mysql-homebrew) the [website directory](https://github.com/calebbarr/MindflexAlpha/tree/master/website) with any web server.
+* 	It will listen on `8081` and visualize brainwaves using [flot](http://www.flotcharts.org/).

@@ -8,3 +8,4 @@
 .classpath
 .project
 .DS_Store
+logback.xml
