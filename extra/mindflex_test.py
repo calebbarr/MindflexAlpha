@@ -16,7 +16,7 @@ def sendFakeBrainwaves():
     clientsocket.send(brainwaves)
 
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serversocket.bind(('localhost', 9999))
+serversocket.bind(('localhost', 9990))
 serversocket.listen(1)
 clientsocket, address = serversocket.accept()
 task.LoopingCall(sendFakeBrainwaves).start(1.0)
