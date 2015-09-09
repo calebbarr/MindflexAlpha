@@ -7,30 +7,31 @@ import Constants._
 
 object Publish {
   
-  lazy val logger = 
+  private lazy val logger = 
     LoggerFactory.getLogger(MindflexAlpha.getClass)
   if(WEBSOCKET_PORT != 0) WebSocket.start
 
-  def log(brainWaves:List[Double],deltas:List[Double]) = {
+  def publish(brainWaves:Seq[Double],deltas:Seq[Double],window:Seq[Double]) = {
     if(AWS_CONNECTED)
       logger.info(stringify(brainWaves))
     if(WebSocket.connectedToWebsocket)
       WebSocket.push(deltas)
+    Feedback.update(window)
     println(brainWaves)
   }
   
-  def stringify(brainWaves:List[Double]) =
+  def stringify(brainWaves:Seq[Double]) =
     brainWaves map { _.toString } reduce {_+" "+_}
 }
 
-object WebSocket { //FIXME connection refused
+object WebSocket {
   
   import com.corundumstudio.socketio
   import com.google.gson.Gson
   
-  lazy val gson = new Gson
+  private lazy val gson = new Gson
   var connectedToWebsocket = false
-  lazy val websocketServer =
+  private lazy val websocketServer =
           new socketio.SocketIOServer({
             val config = new socketio.Configuration
             config.setHostname("localhost")
@@ -49,11 +50,11 @@ object WebSocket { //FIXME connection refused
       }
     }).start
   
- def brainFrame(cols: List[Double]) = 
+ def brainFrame(cols: Seq[Double]) =  // FIXME move to Implicits 
    BrainFrame(cols(0), cols(1), cols(2), cols(3),
      cols(4), cols(5), cols(6), cols(7), cols(8), cols(9))
      
-  def push(deltas:List[Double]) = 
+  def push(deltas:Seq[Double]) = 
     if(connectedToWebsocket){
       val it = websocketServer.getAllClients.iterator
       while(it.hasNext()) {

@@ -1,46 +1,57 @@
 package com.xbarr.mindflex
 
-import com.xbarr.mindflex.Ingest.{ brainWaves, unarchivedBrainwaves }
+import com.xbarr.mindflex.Ingest.brainWaves
+import com.xbarr.mindflex.Stats._
 import com.xbarr.mindflex.Constants._
+import com.xbarr.mindflex.Implicits._
+import scala.math.Ordering.Implicits._
+
+
 
 object MindflexAlpha {
   
-  def main(args: Array[String]): Unit =
-    brainWaves zip deltas(runningAvg(brainWaves),windowAvg(brainWaves,5)) foreach { 
-      case(waves,deltas) =>
-        Publish.log(waves,deltas)
+  val WINDOW_SIZE = 5
+  
+  lazy val deltas = getDeltas(
+      MindflexAlpha.runningAvg(brainWaves),
+      windowAvg(brainWaves,WINDOW_SIZE))
+  
+  def main(args: Array[String]): Unit = 
+    brainWaves.zip3(deltas,windowAvg(brainWaves,WINDOW_SIZE)) foreach { 
+      case(waves,delts,window) =>
+        Publish.publish(waves,delts,window)
     }
-
-  def windowAvg(stream: Stream[List[Double]], size: Int = 1) =
+  
+  def windowAvg(stream: Stream[Seq[Double]], size: Int = 1) =
     getWindow(stream, size) map {
       _.reduce { (x, y) => x zip y map Function.tupled(_ + _) } map { _ / size.toDouble }
     }
 
-  def average(window: List[List[Double]]) =
+  def average(window: List[Seq[Double]]) =
     window.reduce { (x, y) => x zip y map Function.tupled(_ + _) } map { _ / window.size.toDouble }
 
   def getWindow[T](stream: Stream[T], size: Int = 1) = stream sliding (size) toStream
 
   def indexSeq[T](stream: Stream[T], offset: Int = 0) = stream.zipWithIndex map { x => (x._1, x._2 + offset + 1 toDouble) }
 
-  def deltas(window: Stream[List[Double]], compareWindow: Stream[List[Double]]) =
+  def getDeltas(window: Stream[Seq[Double]], compareWindow: Stream[Seq[Double]]) =
     compareWindow zip window map { case (x, y) => x zip y map Function.tupled(_ / _) }
 
-  def runningAvg(stream: Stream[List[Double]], getArchived: Boolean = AWS_CONNECTED) = {
+  def runningAvg(stream: Stream[Seq[Double]], getArchived: Boolean = AWS_CONNECTED) = {
     // if m_n is the mean of x_1 ... x_n, then m_{n+1} = (n*m_n + x_{n+1})/(n+1).
-    def indexedAvg(m_n: (List[Double], Double), x_n1: (List[Double], Double)) =
+    def indexedAvg(m_n: (Seq[Double], Double), x_n1: (Seq[Double], Double)) =
       (m_n._1 map { _ * m_n._2 } zip x_n1._1 map Function.tupled(_ + _) map { _ / x_n1._2 }, x_n1._2)
 
-    def rollAvg(stream: Stream[(List[Double], Double)])(lastAvg: (List[Double], Double) = 
-      stream.head): Stream[(List[Double], Double)] = {
+    def rollAvg(stream: Stream[(Seq[Double], Double)])(lastAvg: (Seq[Double], Double) = 
+      stream.head): Stream[(Seq[Double], Double)] = {
         val avg = indexedAvg(lastAvg, stream.tail.head)
         avg #:: rollAvg(stream.tail)(avg)
     }
 
-    if (getArchived && !unarchivedBrainwaves.isEmpty) {
-      val lastAvg = average(unarchivedBrainwaves)
-      val indexedStream = indexSeq(stream, offset = unarchivedBrainwaves.size.toInt)
-      indexedStream.head #:: rollAvg(indexedStream)((lastAvg, unarchivedBrainwaves.size.toDouble))
+    if (getArchived && !stats.isEmpty) {
+      val lastAvg = stats map {_.mean} toList
+      val indexedStream = indexSeq(stream, offset = stats.head.size)
+      indexedStream.head #:: rollAvg(indexedStream)((lastAvg, stats.head.size.toDouble))
     } else {
       val indexedStream = indexSeq(stream)
       indexedStream.head #:: rollAvg(indexedStream)()
@@ -48,3 +59,4 @@ object MindflexAlpha {
   } map {_._1}
 
 }
+

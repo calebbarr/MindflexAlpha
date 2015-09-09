@@ -10,3 +10,4 @@
 .project
 .DS_Store
 logback.xml
+.history
