@@ -4,6 +4,7 @@ package com.xbarr.mindflex
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import Constants._
+import Implicits._
 
 object Publish {
   
@@ -39,9 +40,18 @@ object WebSocket {
             config
           })
   
-  case class BrainFrame(attention: Double, meditation: Double,
-               delta: Double, theta: Double, lowAlpha: Double, highAlpha: Double, lowBeta: Double,
-               highBeta: Double, lowGamma: Double, highGamma: Double)
+  case class BrainFrame(brainWaves:Seq[Double]){
+    val attention = brainWaves.attention
+    val meditation = brainWaves.meditation
+    val theta = brainWaves.theta
+    val delta = brainWaves.delta
+    val lowAlpha = brainWaves.lowAlpha
+    val highAlpha = brainWaves.highAlpha
+    val lowBeta = brainWaves.lowBeta
+    val highBeta = brainWaves.highBeta
+    val lowGamma = brainWaves.lowGamma
+    val highGamma = brainWaves.highGamma
+  }
   
   def start =
     new Thread(new Runnable {
@@ -49,17 +59,13 @@ object WebSocket {
         startWebsocketServer
       }
     }).start
-  
- def brainFrame(cols: Seq[Double]) =  // FIXME move to Implicits 
-   BrainFrame(cols(0), cols(1), cols(2), cols(3),
-     cols(4), cols(5), cols(6), cols(7), cols(8), cols(9))
      
   def push(deltas:Seq[Double]) = 
     if(connectedToWebsocket){
       val it = websocketServer.getAllClients.iterator
       while(it.hasNext()) {
         val client = it.next
-        client.sendEvent("brainwaves", gson.toJson(brainFrame(deltas)))
+        client.sendEvent("brainwaves", gson.toJson(BrainFrame(deltas)))
       }
     }
   

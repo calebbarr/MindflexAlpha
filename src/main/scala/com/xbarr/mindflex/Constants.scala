@@ -76,14 +76,39 @@ object Implicits {
     val NUM_WAVELENGTHS = 10
   }
   
-  implicit class Zip3Able[T](s:Seq[T]) extends Seq[T]{
-    def zip3(b:Seq[T],c:Seq[T]) = 
+  implicit class Zip3Able[T](s:Iterator[T]) extends Iterator[T]{
+    def zip3(b:Iterator[T],c:Iterator[T]) = 
       this.zip(b) zip(c) map {x=>(x._1._1,x._1._2,x._2)}
-    def apply = s.apply _
-    def apply(idx:Int) = s.apply(idx)
-    def length = s.length
-    def iterator = s.iterator
+    def next = s.next
+    def hasNext = s.hasNext
   }
   
+  case class RollingAvg(stream: Iterator[(Seq[Double], Double)])
+      (lastAvg: (Seq[Double], Double) = stream.next)
+      extends Iterator[Seq[Double]]  {
+      
+      private var _lastAvg:(Seq[Double],Double) = lastAvg
+      
+      def indexedAvg(m_n: (Seq[Double], Double), x_n1: (Seq[Double], Double)) =
+          // if m_n is the mean of x_1 ... x_n, then m_{n+1} = (n*m_n + x_{n+1})/(n+1).
+          (m_n._1 map { _ * m_n._2 } zip x_n1._1 
+          map Function.tupled(_+_) map { _/x_n1._2 }
+          , x_n1._2)
+       
+      def hasNext = stream.hasNext
+      
+      def next = this.synchronized {
+         val n_i = stream.next
+         val nextAvg = indexedAvg(this._lastAvg,n_i)
+         this._lastAvg = nextAvg
+         nextAvg._1
+        }
+  }
+
+  
+  implicit class Rollable(stream: Iterator[(Seq[Double], Double)]) {
+    def toRollingAvg()(lastAvg:(Seq[Double], Double)=stream.next) = 
+      RollingAvg(stream)(lastAvg)
+  }
 }
 

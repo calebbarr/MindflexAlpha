@@ -22,7 +22,7 @@ object Ingest {
       new BufferedSource(new Socket(
           InetAddress.getByName("localhost"), MINDFLEX_PORT)
           .getInputStream).getLines.toStream.filter(!_.isEmpty)
-          .map(_.split(",").toSeq.map(_.toDouble)) filter (_(0) == 0) map (_.tail)
+          .map(_.split(",").toSeq.map(_.toDouble)) filter (_(0) == 0) map (_.tail) iterator
           
   if(brainWaves.isEmpty) {
     println("no brainwaves")
