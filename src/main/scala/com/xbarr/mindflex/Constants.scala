@@ -83,32 +83,30 @@ object Implicits {
     def hasNext = s.hasNext
   }
   
-  case class RollingAvg(stream: Iterator[(Seq[Double], Double)])
-      (lastAvg: (Seq[Double], Double) = stream.next)
-      extends Iterator[Seq[Double]]  {
+  case class RollingAvg(
+      stream: Iterator[Seq[Double]], 
+      private var lastAvg: Seq[Double],
+      private var index:Double=1) extends Iterator[Seq[Double]]  {
       
-      private var _lastAvg:(Seq[Double],Double) = lastAvg
       
-      def indexedAvg(m_n: (Seq[Double], Double), x_n1: (Seq[Double], Double)) =
+      private def indexedAvg(x_n1:Seq[Double]) =
           // if m_n is the mean of x_1 ... x_n, then m_{n+1} = (n*m_n + x_{n+1})/(n+1).
-          (m_n._1 map { _ * m_n._2 } zip x_n1._1 
-          map Function.tupled(_+_) map { _/x_n1._2 }
-          , x_n1._2)
-       
+          lastAvg map { _ * index } zip x_n1 map Function.tupled(_+_) map { _/(index+1) }
+
       def hasNext = stream.hasNext
       
       def next = this.synchronized {
-         val n_i = stream.next
-         val nextAvg = indexedAvg(this._lastAvg,n_i)
-         this._lastAvg = nextAvg
-         nextAvg._1
-        }
+         val nextAvg = indexedAvg(stream.next)
+         lastAvg = nextAvg
+         index = index+1
+         nextAvg
+      }
   }
 
-  
-  implicit class Rollable(stream: Iterator[(Seq[Double], Double)]) {
-    def toRollingAvg()(lastAvg:(Seq[Double], Double)=stream.next) = 
-      RollingAvg(stream)(lastAvg)
+  implicit class Rollable(stream: Iterator[Seq[Double]]) {
+    
+    def toRollingAvg(lastAvg:Seq[Double]=stream.next,offset:Int=1) = 
+      RollingAvg(stream,lastAvg,offset)
   }
 }
 

@@ -35,22 +35,17 @@ object MindflexAlpha {
     window.reduce { (x, y) => x zip y map Function.tupled(_+_) } map { _/window.size.toDouble }
 
   def getWindow[T](stream: Iterator[T], size: Int = 1) = stream sliding (size)
-
-  def indexIterator[T](stream: Iterator[T], offset: Int = 0) = stream.zipWithIndex map { x => (x._1, x._2 + offset + 1 toDouble) }
-
+  
   def getDeltas(window: Iterator[Seq[Double]], compareWindow: Iterator[Seq[Double]]) =
     compareWindow zip window map { case (x, y) => x zip y map Function.tupled(_/_) }
 
-  def runningAvg(stream: Iterator[Seq[Double]], getArchived: Boolean = AWS_CONNECTED)
-    :Iterator[Seq[Double]]= {
-    if (getArchived && !stats.isEmpty) // this triggers S3 pull
-      indexIterator(stream, offset = stats.head.size)
-        .toRollingAvg()((stats.map{_.mean}.toSeq , stats.head.size.toDouble))
-    else {
-      val indexed = indexIterator(stream)
-      indexed.toRollingAvg()(indexed.next)
-    }
-  }
+  def runningAvg(
+      stream: Iterator[Seq[Double]],
+      // this triggers S3 pull
+      getArchived: Boolean = (AWS_CONNECTED && !stats.isEmpty)):Iterator[Seq[Double]]=  
+        stream.toRollingAvg(
+          offset= if(getArchived) stats.head.size else 1,
+          lastAvg= if(getArchived) stats.map{_.mean}.toSeq else stream.next)
 
 }
 
