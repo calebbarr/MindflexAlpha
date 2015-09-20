@@ -7,9 +7,6 @@ import com.xbarr.mindflex.Implicits._
 import scala.math.Ordering.Implicits._
 
 
-
-// TODO change functions to use generic collections
-// TODO create prependable iterator
 object MindflexAlpha {
   
   val WINDOW_SIZE = 5
@@ -38,11 +35,12 @@ object MindflexAlpha {
   
   def getDeltas(window: Iterator[Seq[Double]], compareWindow: Iterator[Seq[Double]]) =
     compareWindow zip window map { case (x, y) => x zip y map Function.tupled(_/_) }
-
+  
+  // TODO create prependable iterator
   def runningAvg(
       stream: Iterator[Seq[Double]],
       // this triggers S3 pull
-      getArchived: Boolean = (AWS_CONNECTED && !stats.isEmpty)):Iterator[Seq[Double]]=  
+      getArchived:Boolean=(AWS_CONNECTED && !stats.isEmpty)):Iterator[Seq[Double]]=  
         stream.toRollingAvg(
           offset= if(getArchived) stats.head.size else 1,
           lastAvg= if(getArchived) stats.map{_.mean}.toSeq else stream.next)

@@ -86,14 +86,13 @@ object Implicits {
   case class RollingAvg(
       stream: Iterator[Seq[Double]], 
       private var lastAvg: Seq[Double],
-      private var index:Double=1) extends Iterator[Seq[Double]]  {
-      
+      private var index:Double=1) extends Iterator[Seq[Double]] {
       
       private def indexedAvg(x_n1:Seq[Double]) =
           // if m_n is the mean of x_1 ... x_n, then m_{n+1} = (n*m_n + x_{n+1})/(n+1).
           lastAvg map { _ * index } zip x_n1 map Function.tupled(_+_) map { _/(index+1) }
 
-      def hasNext = stream.hasNext
+      def hasNext = this.synchronized { stream.hasNext }
       
       def next = this.synchronized {
          val nextAvg = indexedAvg(stream.next)
@@ -104,9 +103,9 @@ object Implicits {
   }
 
   implicit class Rollable(stream: Iterator[Seq[Double]]) {
-    
     def toRollingAvg(lastAvg:Seq[Double]=stream.next,offset:Int=1) = 
       RollingAvg(stream,lastAvg,offset)
   }
+  
 }
 
