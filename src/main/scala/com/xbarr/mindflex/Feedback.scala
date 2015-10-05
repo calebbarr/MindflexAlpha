@@ -1,8 +1,8 @@
 package com.xbarr.mindflex
 
-import com.xbarr.mindflex.Constants.PLAYLIST
-import com.xbarr.mindflex.Implicits._
-import com.xbarr.mindflex.Stats._
+import com.xbarr.mindflex.Constants._
+import com.xbarr.mindflex.Stats.{getStats=>stats,QUANTILES}
+import com.xbarr.mindflex.MindflexAlpha.BrainWaves
 
 object Feedback {
 
@@ -44,7 +44,9 @@ object Quiet extends FeedbackChannel {
     if(PLAYLIST.isSet) initialize
     
     def play = track.start
+    
     def pause = track.stop
+    
     def skip = {
       loadTrack(new java.io.File(Playlist.next))
       play
@@ -75,10 +77,12 @@ object Quiet extends FeedbackChannel {
     
     private object TrackListener extends LineListener {
       import javax.sound.sampled.LineEvent
+      
       def update(event:LineEvent) = 
         event.getType match {
           case LineEvent.Type.STOP => Player.skip
         }
+      
     }
     
     object Volume {
@@ -86,6 +90,7 @@ object Quiet extends FeedbackChannel {
       
       private def gainControl = 
         track.getControl(FloatControl.Type.MASTER_GAIN).asInstanceOf[FloatControl]
+      
       val MAX = 6.0f
       private val _MIN = -80f
       private val MIN_LIMITER = .75f
@@ -106,16 +111,21 @@ object Quiet extends FeedbackChannel {
       }
 
       def get = gainControl.getValue
+      
       def turnUp = _set(get + (RANGE / STAGES) )
+      
       def turnDown = _set(get - (RANGE / STAGES) )
       
     }
     
     private object Playlist {
+      
       println("loading playlist from " + PLAYLIST)
       private val tracks = Iterator.continually(
           scala.io.Source.fromFile(PLAYLIST).getLines.filterNot(_.startsWith("#")).toList).flatten
+      
       def next = tracks.next
+      
     }
   }
   

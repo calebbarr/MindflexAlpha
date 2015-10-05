@@ -4,7 +4,9 @@ package com.xbarr.mindflex
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import Constants._
-import Implicits._
+import MindflexAlpha.BrainWaves
+import scala.concurrent._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object Publish {
   
@@ -14,15 +16,12 @@ object Publish {
 
   def publish(brainWaves:Seq[Double],deltas:Seq[Double],window:Seq[Double]) = {
     if(AWS_CONNECTED)
-      logger.info(stringify(brainWaves))
+      logger.info(brainWaves.stringify)
     if(WebSocket.connectedToWebsocket)
       WebSocket.push(deltas)
     Feedback.update(window)
     println(brainWaves)
   }
-  
-  def stringify(brainWaves:Seq[Double]) =
-    brainWaves map { _.toString } reduce {_+" "+_}
 }
 
 object WebSocket {
@@ -40,6 +39,7 @@ object WebSocket {
             config
           })
   
+  // TODO remove BrainFrame objects in javascript and just use Array with indexes
   case class BrainFrame(brainWaves:Seq[Double]){
     val attention = brainWaves.attention
     val meditation = brainWaves.meditation
@@ -54,11 +54,7 @@ object WebSocket {
   }
   
   def start =
-    new Thread(new Runnable {
-      def run {
-        startWebsocketServer
-      }
-    }).start
+    Future {startWebsocketServer}
      
   def push(deltas:Seq[Double]) = 
     if(connectedToWebsocket){
