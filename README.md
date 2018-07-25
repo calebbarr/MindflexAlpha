@@ -18,5 +18,5 @@ Streaming analytics on brain waves, extensible to various applications.  Require
 	* 	`nc localhost 9999`
 
 ## visualizing the Mindflex
-* 	[Serve](https://echo.co/blog/os-x-1010-yosemite-local-development-environment-apache-php-and-mysql-homebrew) the [website directory](https://github.com/calebbarr/MindflexAlpha/tree/master/website) with any web server.
+* 	[Serve](http://web.archive.org/web/20160305051535/https://echo.co/blog/os-x-1010-yosemite-local-development-environment-apache-php-and-mysql-homebrew) the [website directory](https://github.com/calebbarr/MindflexAlpha/tree/master/website) with any web server.
 * 	It will listen on `8081` and visualize brainwaves using [flot](http://www.flotcharts.org/).
